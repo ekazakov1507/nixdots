@@ -1,0 +1,17 @@
+[SddmGreeterTheme]
+Name=T480 Noctalia
+Description=Custom SDDM theme for the T480 Niri and Noctalia setup
+Author=Codex
+Copyright=2026
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=
+Screenshot=
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Email=
+Theme-Id=t480-noctalia
+Theme-API=2.0
+QtVersion=6

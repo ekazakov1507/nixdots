@@ -1,0 +1,330 @@
+{ ... }:
+{
+  flake.nixosModules.user = { pkgs, ... }:
+    let
+      username = "user";
+    in
+    {
+      users.mutableUsers = true;
+
+      users.users.${username} = {
+        isNormalUser = true;
+        description = "T480 User";
+        extraGroups = [
+          "networkmanager"
+          "wheel"
+        ];
+      };
+
+      home-manager.useGlobalPkgs = true;
+      home-manager.useUserPackages = true;
+
+      home-manager.users.${username} = {
+        home.username = username;
+        home.homeDirectory = "/home/${username}";
+        home.stateVersion = "25.11";
+
+        home.packages = with pkgs; [
+          git
+          htop
+        ];
+
+        xdg.enable = true;
+        xdg.configFile."niri/config.kdl".text = ''
+          input {
+              keyboard {
+                  numlock
+              }
+
+              touchpad {
+                  tap
+                  dwt
+                  natural-scroll
+              }
+          }
+
+          layout {
+              gaps 16
+              center-focused-column "never"
+              background-color "transparent"
+
+              default-column-width { proportion 0.5; }
+
+              focus-ring {
+                  width 4
+                  active-color "#7fc8ff"
+                  inactive-color "#505050"
+              }
+          }
+
+          overview {
+              workspace-shadow {
+                  off
+              }
+          }
+
+          window-rule {
+              geometry-corner-radius 20
+              clip-to-geometry true
+          }
+
+          layer-rule {
+              match namespace="^noctalia-wallpaper*"
+              place-within-backdrop true
+          }
+
+          debug {
+              honor-xdg-activation-with-invalid-serial
+          }
+
+          spawn-at-startup "noctalia-shell"
+
+          prefer-no-csd
+          screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+          xwayland-satellite {
+              path "xwayland-satellite"
+          }
+
+          binds {
+              Mod+Shift+Slash { show-hotkey-overlay; }
+
+              Mod+T { spawn "alacritty"; }
+              Mod+Space { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
+              Mod+D { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
+              Mod+S { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
+              Mod+Comma { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
+              Mod+V { spawn "noctalia-shell" "ipc" "call" "launcher" "clipboard"; }
+              Mod+C { spawn "noctalia-shell" "ipc" "call" "launcher" "calculator"; }
+              Super+Alt+L { spawn "noctalia-shell" "ipc" "call" "lockScreen" "lock"; }
+
+              XF86AudioRaiseVolume allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "volume" "increase";
+              }
+              XF86AudioLowerVolume allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
+              }
+              XF86AudioMute allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
+              }
+              XF86AudioMicMute allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "volume" "muteInput";
+              }
+
+              XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+              XF86AudioStop allow-when-locked=true { spawn-sh "playerctl stop"; }
+              XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
+              XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
+
+              XF86MonBrightnessUp allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "brightness" "increase";
+              }
+              XF86MonBrightnessDown allow-when-locked=true {
+                  spawn "noctalia-shell" "ipc" "call" "brightness" "decrease";
+              }
+
+              Mod+O repeat=false { toggle-overview; }
+              Mod+Q repeat=false { close-window; }
+
+              Mod+Left { focus-column-left; }
+              Mod+Down { focus-window-down; }
+              Mod+Up { focus-window-up; }
+              Mod+Right { focus-column-right; }
+              Mod+H { focus-column-left; }
+              Mod+J { focus-window-down; }
+              Mod+K { focus-window-up; }
+              Mod+L { focus-column-right; }
+
+              Mod+Ctrl+Left { move-column-left; }
+              Mod+Ctrl+Down { move-window-down; }
+              Mod+Ctrl+Up { move-window-up; }
+              Mod+Ctrl+Right { move-column-right; }
+              Mod+Ctrl+H { move-column-left; }
+              Mod+Ctrl+J { move-window-down; }
+              Mod+Ctrl+K { move-window-up; }
+              Mod+Ctrl+L { move-column-right; }
+
+              Mod+1 { focus-workspace 1; }
+              Mod+2 { focus-workspace 2; }
+              Mod+3 { focus-workspace 3; }
+              Mod+4 { focus-workspace 4; }
+              Mod+5 { focus-workspace 5; }
+              Mod+6 { focus-workspace 6; }
+              Mod+7 { focus-workspace 7; }
+              Mod+8 { focus-workspace 8; }
+              Mod+9 { focus-workspace 9; }
+
+              Mod+Ctrl+1 { move-column-to-workspace 1; }
+              Mod+Ctrl+2 { move-column-to-workspace 2; }
+              Mod+Ctrl+3 { move-column-to-workspace 3; }
+              Mod+Ctrl+4 { move-column-to-workspace 4; }
+              Mod+Ctrl+5 { move-column-to-workspace 5; }
+              Mod+Ctrl+6 { move-column-to-workspace 6; }
+              Mod+Ctrl+7 { move-column-to-workspace 7; }
+              Mod+Ctrl+8 { move-column-to-workspace 8; }
+              Mod+Ctrl+9 { move-column-to-workspace 9; }
+
+              Print { screenshot; }
+              Ctrl+Print { screenshot-screen; }
+              Alt+Print { screenshot-window; }
+
+              Mod+Shift+E { quit; }
+          }
+        '';
+
+        xdg.configFile."waybar/config.jsonc".text = ''
+          {
+            "layer": "top",
+            "position": "top",
+            "height": 34,
+            "spacing": 8,
+            "margin-top": 8,
+            "margin-left": 10,
+            "margin-right": 10,
+            "modules-left": [
+              "niri/workspaces"
+            ],
+            "modules-center": [
+              "niri/window"
+            ],
+            "modules-right": [
+              "tray",
+              "network",
+              "pulseaudio",
+              "battery",
+              "battery#bat0",
+              "battery#bat1",
+              "clock"
+            ],
+            "niri/workspaces": {
+              "format": "{icon}",
+              "format-icons": {
+                "active": "[*]",
+                "default": "[ ]"
+              }
+            },
+            "niri/window": {
+              "format": "{}",
+              "icon": false,
+              "separate-outputs": true,
+              "max-length": 70
+            },
+            "tray": {
+              "spacing": 10
+            },
+            "network": {
+              "format-wifi": "NET {essid} {signalStrength}%",
+              "format-ethernet": "NET wired",
+              "format-disconnected": "NET down",
+              "tooltip-format": "{ifname}"
+            },
+            "pulseaudio": {
+              "format": "VOL {volume}%",
+              "format-muted": "VOL mute",
+              "scroll-step": 5
+            },
+            "battery": {
+              "interval": 10,
+              "states": {
+                "warning": 30,
+                "critical": 15
+              },
+              "format": "TOT {capacity}%",
+              "format-charging": "TOT {capacity}% +",
+              "format-plugged": "TOT {capacity}% AC",
+              "format-full": "TOT full",
+              "tooltip-format": "Total {capacity}% {time}"
+            },
+            "battery#bat0": {
+              "bat": "BAT0",
+              "interval": 10,
+              "states": {
+                "warning": 30,
+                "critical": 15
+              },
+              "format": "BAT0 {capacity}%",
+              "format-charging": "BAT0 {capacity}% +",
+              "format-plugged": "BAT0 {capacity}% AC",
+              "format-full": "BAT0 full",
+              "tooltip-format": "BAT0 {capacity}% {time}"
+            },
+            "battery#bat1": {
+              "bat": "BAT1",
+              "interval": 10,
+              "states": {
+                "warning": 30,
+                "critical": 15
+              },
+              "format": "BAT1 {capacity}%",
+              "format-charging": "BAT1 {capacity}% +",
+              "format-plugged": "BAT1 {capacity}% AC",
+              "format-full": "BAT1 full",
+              "tooltip-format": "BAT1 {capacity}% {time}"
+            },
+            "clock": {
+              "format": "{:%a %d %b  %H:%M}"
+            }
+          }
+        '';
+
+        xdg.configFile."waybar/style.css".text = ''
+          * {
+            border: none;
+            border-radius: 0;
+            font-family: sans-serif;
+            font-size: 13px;
+            min-height: 0;
+          }
+
+          window#waybar {
+            background: rgba(20, 24, 28, 0.92);
+            color: #e6edf3;
+          }
+
+          #workspaces,
+          #window,
+          #tray,
+          #network,
+          #pulseaudio,
+          #battery,
+          #clock {
+            background: #1f252c;
+            border-radius: 10px;
+            margin: 6px 0;
+            padding: 4px 10px;
+          }
+
+          #workspaces button {
+            color: #8b949e;
+            padding: 0 6px;
+          }
+
+          #workspaces button.active,
+          #workspaces button.focused {
+            color: #f0f6fc;
+          }
+
+          #window {
+            color: #9bd1ff;
+          }
+
+          #battery.warning {
+            color: #f7b955;
+          }
+
+          #battery.critical {
+            color: #ff7b72;
+          }
+
+          #battery.charging,
+          #battery.plugged {
+            color: #7ee787;
+          }
+        '';
+
+        programs.bash.enable = true;
+        programs.git.enable = true;
+        programs.home-manager.enable = true;
+      };
+    };
+}
