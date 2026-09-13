@@ -12,7 +12,7 @@
 
         outputScale = mkOption {
           type = types.float;
-          default = 1.5;
+          default = 1.25;
           description = "Persistent scale for the built-in display.";
         };
 

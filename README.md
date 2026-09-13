@@ -140,6 +140,7 @@ Also verify:
 
 - Screen brightness keys should map through Niri as `XF86MonBrightnessUp` and `XF86MonBrightnessDown`.
 - Audio and media keys should map through Niri as the standard `XF86Audio*` keys.
+- The built-in display starts at 125% scale while retaining its native resolution. Use `Super+Ctrl+-` for 100%, `Super+Ctrl+0` to restore 125%, and `Super+Ctrl+=` for 150%. These temporary choices reset to 125% after a Niri configuration reload or new login.
 - Keyboard backlight toggle and some firmware-level ThinkPad functions are not compositor features; they are handled by the laptop firmware or kernel support rather than by Niri binds.
 - If a key does not work as expected, run `wev` inside Niri and press the key to confirm the emitted symbol, then adjust `modules/features/user.nix`.
 

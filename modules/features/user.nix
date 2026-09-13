@@ -1,8 +1,9 @@
 { ... }:
 {
-  flake.nixosModules.user = { pkgs, ... }:
+  flake.nixosModules.user = { config, pkgs, ... }:
     let
       username = "user";
+      visual = config.t480.visualAccessibility;
     in
     {
       users.mutableUsers = true;
@@ -43,6 +44,14 @@
               }
           }
 
+          output "${visual.outputName}" {
+              scale ${toString visual.outputScale}
+          }
+
+          cursor {
+              xcursor-size ${toString visual.cursorSize}
+          }
+
           layout {
               gaps 16
               center-focused-column "never"
@@ -51,9 +60,9 @@
               default-column-width { proportion 0.5; }
 
               focus-ring {
-                  width 4
-                  active-color "#7fc8ff"
-                  inactive-color "#505050"
+                  width ${toString visual.focusRingWidth}
+                  active-color "${visual.focusRingActiveColor}"
+                  inactive-color "${visual.focusRingInactiveColor}"
               }
           }
 
@@ -90,6 +99,9 @@
               Mod+Shift+Slash { show-hotkey-overlay; }
 
               Mod+T { spawn "alacritty"; }
+              Mod+Ctrl+Minus { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "1"; }
+              Mod+Ctrl+0 { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "${toString visual.outputScale}"; }
+              Mod+Ctrl+Equal { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "1.5"; }
               Mod+Space { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
               Mod+D { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
               Mod+S { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
