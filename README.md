@@ -48,19 +48,17 @@ The base module enables PipeWire with PulseAudio compatibility and `rtkit`, so N
 The Noctalia module adds:
 
 - the Noctalia flake package and Home Manager module
-- official plugin registry support
-- the `niri-overview-launcher` plugin
 - `cliphist`, `imagemagick`, `python3`, and `wlsunset`
 - `xdg-desktop-portal` with the GTK file chooser portal for Niri
 
-Noctalia is the primary shell layer now. Niri starts `noctalia-shell` directly at session startup, and the main launcher, control center, settings, lock screen, volume, and brightness keybinds all go through Noctalia IPC.
+Noctalia is the primary shell layer now. Niri starts `noctalia` directly at session startup, and the main launcher, control center, settings, lock screen, volume, brightness, and media keybinds all go through `noctalia msg`.
 
 The user module also writes an explicit `niri/config.kdl` so the T480 does not rely on upstream defaults for:
 
 - Noctalia compositor integration for rounded windows, wallpaper backdrop placement, and notification activation
 - screen brightness keys via Noctalia IPC
 - volume and mic mute keys via Noctalia IPC
-- media keys via `playerctl`
+- media keys via Noctalia IPC
 
 `wev` is installed for checking the exact key names if any ThinkPad key behaves differently than expected.
 
@@ -125,7 +123,7 @@ Also verify:
 - `sudo tlp-stat -s`
 - `sudo tlp-stat -b`
 - `ls /sys/class/power_supply`
-- `noctalia-shell ipc show`
+- `noctalia msg status`
 - `ls /run/current-system/sw/share/sddm/themes`
 - `test -f /boot/grub/grub.cfg`
 - `ls /boot/kernels`
@@ -153,7 +151,7 @@ Also verify:
 
 ## Noctalia Notes
 
-- The repo uses the Noctalia flake plus its Home Manager module, not a manual `qs` checkout.
+- The repo uses Noctalia v5's native binary and Home Manager module, not the legacy Quickshell shell.
 - The flake now includes Noctalia's Cachix binary cache to avoid expensive local builds.
 - The active Niri shell path is `Niri + Noctalia`, not `Niri + Waybar + Mako`.
 - I did not find official stock Noctalia configuration for separate `BAT0` and `BAT1` widgets comparable to Waybar's multi-instance battery module. For now, treat the built-in Noctalia battery integration as the primary shell UI and the Waybar config as the fallback reference for explicit dual-battery display.

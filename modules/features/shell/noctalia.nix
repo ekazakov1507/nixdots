@@ -4,7 +4,6 @@
     let
       # Keep this in sync with modules/features/user.nix until user settings are centralized.
       username = "user";
-      pluginSource = "https://github.com/noctalia-dev/noctalia-plugins";
       noctaliaPackage = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
     in
     {
@@ -25,83 +24,36 @@
           wlsunset
         ];
 
-        programs.noctalia-shell = {
+        programs.noctalia = {
           enable = true;
           package = noctaliaPackage;
+          systemd.enable = false;
 
           settings = {
-            settingsVersion = 0;
+            shell = {
+              font_family = "sans-serif";
+              settings_show_advanced = true;
+            };
 
             bar = {
-              density = "compact";
-              position = "top";
-              showCapsule = false;
+              order = [ "default" ];
 
-              widgets = {
-                left = [
-                  {
-                    id = "Launcher";
-                  }
-                  {
-                    id = "ActiveWindow";
-                  }
-                ];
-
-                center = [
-                  {
-                    id = "Workspace";
-                    hideUnoccupied = false;
-                    labelMode = "none";
-                  }
-                ];
-
-                right = [
-                  {
-                    id = "Tray";
-                  }
-                  {
-                    id = "NotificationHistory";
-                  }
-                  {
-                    id = "Battery";
-                    alwaysShowPercentage = true;
-                    warningThreshold = 30;
-                  }
-                  {
-                    id = "Volume";
-                  }
-                  {
-                    id = "Brightness";
-                  }
-                  {
-                    id = "ControlCenter";
-                  }
-                  {
-                    id = "Clock";
-                    formatHorizontal = "HH:mm";
-                    formatVertical = "HH mm";
-                    useMonospacedFont = true;
-                  }
+              default = {
+                position = "top";
+                capsule = false;
+                start = [ "launcher" "active-window" ];
+                center = [ "workspaces" ];
+                end = [
+                  "tray"
+                  "notifications"
+                  "battery"
+                  "volume"
+                  "brightness"
+                  "control-center"
+                  "clock"
                 ];
               };
             };
-          };
-
-          plugins = {
-            sources = [
-              {
-                enabled = true;
-                name = "Official Noctalia Plugins";
-                url = pluginSource;
-              }
-            ];
-
-            states."niri-overview-launcher" = {
-              enabled = true;
-              sourceUrl = pluginSource;
-            };
-
-            version = 2;
           };
         };
       };

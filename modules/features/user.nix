@@ -77,7 +77,7 @@
               honor-xdg-activation-with-invalid-serial
           }
 
-          spawn-at-startup "noctalia-shell"
+          spawn-at-startup "noctalia"
 
           prefer-no-csd
           screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
@@ -90,37 +90,37 @@
               Mod+Shift+Slash { show-hotkey-overlay; }
 
               Mod+T { spawn "alacritty"; }
-              Mod+Space { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
-              Mod+D { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
-              Mod+S { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
-              Mod+Comma { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
-              Mod+V { spawn "noctalia-shell" "ipc" "call" "launcher" "clipboard"; }
-              Mod+C { spawn "noctalia-shell" "ipc" "call" "launcher" "calculator"; }
-              Super+Alt+L { spawn "noctalia-shell" "ipc" "call" "lockScreen" "lock"; }
+              Mod+Space { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+              Mod+D { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+              Mod+S { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+              Mod+Comma { spawn "noctalia" "msg" "settings-toggle"; }
+              Mod+V { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+              Mod+C { spawn "noctalia" "msg" "panel-toggle" "launcher" "/calc"; }
+              Super+Alt+L { spawn "noctalia" "msg" "session" "lock"; }
 
               XF86AudioRaiseVolume allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "volume" "increase";
+                  spawn "noctalia" "msg" "volume-up";
               }
               XF86AudioLowerVolume allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
+                  spawn "noctalia" "msg" "volume-down";
               }
               XF86AudioMute allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
+                  spawn "noctalia" "msg" "volume-mute";
               }
               XF86AudioMicMute allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "volume" "muteInput";
+                  spawn "noctalia" "msg" "mic-mute";
               }
 
-              XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
-              XF86AudioStop allow-when-locked=true { spawn-sh "playerctl stop"; }
-              XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
-              XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
+              XF86AudioPlay allow-when-locked=true { spawn "noctalia" "msg" "media" "toggle"; }
+              XF86AudioStop allow-when-locked=true { spawn "noctalia" "msg" "media" "stop"; }
+              XF86AudioPrev allow-when-locked=true { spawn "noctalia" "msg" "media" "previous"; }
+              XF86AudioNext allow-when-locked=true { spawn "noctalia" "msg" "media" "next"; }
 
               XF86MonBrightnessUp allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "brightness" "increase";
+                  spawn "noctalia" "msg" "brightness-up";
               }
               XF86MonBrightnessDown allow-when-locked=true {
-                  spawn "noctalia-shell" "ipc" "call" "brightness" "decrease";
+                  spawn "noctalia" "msg" "brightness-down";
               }
 
               Mod+O repeat=false { toggle-overview; }

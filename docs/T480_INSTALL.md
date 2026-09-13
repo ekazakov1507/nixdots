@@ -383,7 +383,7 @@ journalctl -b -u sddm --no-pager
 If Niri starts but the shell does not appear, run:
 
 ```bash
-noctalia-shell
+noctalia
 ```
 
 If Noctalia power profile controls are missing, that is expected with this repo. The T480 power stack uses TLP instead of `power-profiles-daemon`.
