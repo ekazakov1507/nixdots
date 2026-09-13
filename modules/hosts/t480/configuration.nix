@@ -7,6 +7,7 @@
       inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t480
 
       self.nixosModules.base
+      self.nixosModules.accessibility
       self.nixosModules.librebootGrub
       self.nixosModules.laptop
       self.nixosModules.lazyvim

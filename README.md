@@ -16,6 +16,7 @@ It is designed to be authored from `c:\Users\user\nixdots`, pushed to GitHub, an
 
 - `flake.nix`: flake entrypoint
 - `modules/features`: reusable base, laptop, display-manager, desktop, editor, and user modules
+- `modules/features/accessibility.nix`: shared visual-accessibility values for the T480 interfaces
 - `modules/features/display/sddm.nix`: SDDM login manager with a local T480 Noctalia theme
 - `modules/features/shell/noctalia.nix`: Noctalia shell integration layered on top of Niri
 - `modules/hosts/t480`: host definition, `disko` layout, and generated host files
