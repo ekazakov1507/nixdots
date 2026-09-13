@@ -17,6 +17,11 @@ Rectangle {
     property color warmAccentColor: config.WarmAccentColor || "#f2c66d"
     property color dangerColor: config.DangerColor || "#ff6f61"
     property string errorText: ""
+    property real uiScale: Number(config.LoginScale || 1.25)
+
+    function scaled(value) {
+        return Math.round(value * uiScale)
+    }
 
     function attemptLogin() {
         errorText = ""
@@ -70,31 +75,31 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: Math.max(28, Math.min(root.width, root.height) * 0.06)
-        spacing: Math.max(28, root.width * 0.06)
+        anchors.margins: Math.max(root.scaled(28), Math.min(root.width, root.height) * 0.06)
+        spacing: Math.max(root.scaled(28), root.width * 0.06)
 
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumWidth: 320
+            Layout.minimumWidth: root.scaled(320)
 
             Column {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 22
-                width: Math.min(parent.width, 560)
+                spacing: root.scaled(22)
+                width: Math.min(parent.width, root.scaled(560))
 
                 Text {
                     text: config.HostLabel || "ThinkPad T480"
                     color: root.textColor
-                    font.pixelSize: Math.max(46, Math.min(82, root.width * 0.055))
+                    font.pixelSize: Math.max(root.scaled(46), Math.min(root.scaled(82), root.width * 0.055 * root.uiScale))
                     font.weight: Font.DemiBold
                     lineHeight: 0.92
                 }
 
                 Rectangle {
-                    width: Math.min(parent.width, 420)
-                    height: 2
+                    width: Math.min(parent.width, root.scaled(420))
+                    height: root.scaled(2)
                     color: root.accentColor
                     opacity: 0.9
                 }
@@ -103,7 +108,7 @@ Rectangle {
                     width: parent.width
                     text: config.SessionLabel || "Niri + Noctalia"
                     color: root.warmAccentColor
-                    font.pixelSize: 22
+                    font.pixelSize: root.scaled(22)
                     font.weight: Font.Medium
                 }
 
@@ -111,34 +116,34 @@ Rectangle {
                     width: parent.width
                     text: Qt.formatDateTime(new Date(), "dddd, d MMMM  yyyy")
                     color: root.mutedTextColor
-                    font.pixelSize: 18
+                    font.pixelSize: root.scaled(18)
                 }
             }
         }
 
         Rectangle {
-            Layout.preferredWidth: Math.min(430, Math.max(350, root.width * 0.28))
-            Layout.maximumWidth: 460
-            Layout.minimumWidth: 330
+            Layout.preferredWidth: Math.min(root.scaled(430), Math.max(root.scaled(350), root.width * 0.28))
+            Layout.maximumWidth: root.scaled(460)
+            Layout.minimumWidth: root.scaled(330)
             Layout.alignment: Qt.AlignVCenter
-            radius: 18
+            radius: root.scaled(18)
             color: Qt.rgba(0.07, 0.1, 0.12, 0.92)
             border.color: "#2f3d44"
-            border.width: 1
-            implicitHeight: loginColumn.implicitHeight + 56
+            border.width: root.scaled(1)
+            implicitHeight: loginColumn.implicitHeight + root.scaled(56)
 
             ColumnLayout {
                 id: loginColumn
 
                 anchors.fill: parent
-                anchors.margins: 28
-                spacing: 16
+                anchors.margins: root.scaled(28)
+                spacing: root.scaled(16)
 
                 Text {
                     Layout.fillWidth: true
                     text: "Sign in"
                     color: root.textColor
-                    font.pixelSize: 28
+                    font.pixelSize: root.scaled(28)
                     font.weight: Font.DemiBold
                 }
 
@@ -146,7 +151,7 @@ Rectangle {
                     Layout.fillWidth: true
                     text: sddm.hostName
                     color: root.mutedTextColor
-                    font.pixelSize: 14
+                    font.pixelSize: root.scaled(14)
                 }
 
                 TextField {
@@ -158,13 +163,14 @@ Rectangle {
                     selectByMouse: true
                     color: root.textColor
                     placeholderTextColor: root.mutedTextColor
-                    font.pixelSize: 16
+                    font.pixelSize: root.scaled(16)
+                    Layout.minimumHeight: root.scaled(48)
 
                     background: Rectangle {
-                        radius: 10
+                        radius: root.scaled(10)
                         color: "#162027"
                         border.color: userName.activeFocus ? root.accentColor : "#2d3a42"
-                        border.width: 1
+                        border.width: root.scaled(1)
                     }
                 }
 
@@ -177,16 +183,17 @@ Rectangle {
                     selectByMouse: true
                     color: root.textColor
                     placeholderTextColor: root.mutedTextColor
-                    font.pixelSize: 16
+                    font.pixelSize: root.scaled(16)
+                    Layout.minimumHeight: root.scaled(48)
                     focus: true
                     Keys.onReturnPressed: root.attemptLogin()
                     Keys.onEnterPressed: root.attemptLogin()
 
                     background: Rectangle {
-                        radius: 10
+                        radius: root.scaled(10)
                         color: "#162027"
                         border.color: password.activeFocus ? root.accentColor : "#2d3a42"
-                        border.width: 1
+                        border.width: root.scaled(1)
                     }
                 }
 
@@ -197,11 +204,12 @@ Rectangle {
                     model: sessionModel
                     textRole: "name"
                     currentIndex: Math.max(0, sessionModel.lastIndex)
-                    font.pixelSize: 14
+                    font.pixelSize: root.scaled(14)
+                    Layout.minimumHeight: root.scaled(44)
 
                     contentItem: Text {
-                        leftPadding: 12
-                        rightPadding: 30
+                        leftPadding: root.scaled(12)
+                        rightPadding: root.scaled(30)
                         text: sessionBox.displayText
                         color: root.textColor
                         verticalAlignment: Text.AlignVCenter
@@ -209,10 +217,10 @@ Rectangle {
                     }
 
                     background: Rectangle {
-                        radius: 10
+                        radius: root.scaled(10)
                         color: "#162027"
                         border.color: sessionBox.activeFocus ? root.accentColor : "#2d3a42"
-                        border.width: 1
+                        border.width: root.scaled(1)
                     }
 
                     delegate: ItemDelegate {
@@ -224,35 +232,35 @@ Rectangle {
                         contentItem: Text {
                             text: model.name
                             color: sessionDelegate.highlighted ? "#07110e" : root.textColor
-                            font.pixelSize: 14
+                            font.pixelSize: root.scaled(14)
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
                         }
 
                         background: Rectangle {
-                            radius: 8
+                            radius: root.scaled(8)
                             color: sessionDelegate.highlighted ? root.accentColor : "#111820"
                         }
                     }
 
                     popup: Popup {
-                        y: sessionBox.height + 6
+                        y: sessionBox.height + root.scaled(6)
                         width: sessionBox.width
                         implicitHeight: contentItem.implicitHeight + 8
-                        padding: 4
+                        padding: root.scaled(4)
 
                         contentItem: ListView {
                             clip: true
-                            implicitHeight: Math.min(contentHeight, 220)
+                            implicitHeight: Math.min(contentHeight, root.scaled(220))
                             model: sessionBox.popup.visible ? sessionBox.delegateModel : null
                             currentIndex: sessionBox.highlightedIndex
                         }
 
                         background: Rectangle {
-                            radius: 12
+                            radius: root.scaled(12)
                             color: "#111820"
                             border.color: "#2d3a42"
-                            border.width: 1
+                            border.width: root.scaled(1)
                         }
                     }
                 }
@@ -261,7 +269,7 @@ Rectangle {
                     Layout.fillWidth: true
                     text: root.errorText
                     color: root.dangerColor
-                    font.pixelSize: 14
+                    font.pixelSize: root.scaled(14)
                     visible: root.errorText.length > 0
                     wrapMode: Text.WordWrap
                 }
@@ -270,9 +278,9 @@ Rectangle {
                     id: unlockButton
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 48
+                    Layout.preferredHeight: root.scaled(48)
                     text: "Unlock"
-                    font.pixelSize: 16
+                    font.pixelSize: root.scaled(16)
                     font.weight: Font.DemiBold
                     onClicked: root.attemptLogin()
 
@@ -285,21 +293,21 @@ Rectangle {
                     }
 
                     background: Rectangle {
-                        radius: 12
+                        radius: root.scaled(12)
                         color: unlockButton.down ? "#58b99d" : root.accentColor
                     }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 10
+                    spacing: root.scaled(10)
 
                     Button {
                         id: suspendButton
 
                         Layout.fillWidth: true
                         text: "Suspend"
-                        font.pixelSize: 13
+                        font.pixelSize: root.scaled(13)
                         enabled: sddm.canSuspend
                         onClicked: sddm.suspend()
 
@@ -313,10 +321,10 @@ Rectangle {
                         }
 
                         background: Rectangle {
-                            radius: 10
+                            radius: root.scaled(10)
                             color: suspendButton.down ? "#263840" : suspendButton.hovered ? "#1e2b31" : "#162027"
                             border.color: suspendButton.enabled ? "#2d3a42" : "#1e262b"
-                            border.width: 1
+                            border.width: root.scaled(1)
                             opacity: suspendButton.enabled ? 1 : 0.45
                         }
                     }
@@ -326,7 +334,7 @@ Rectangle {
 
                         Layout.fillWidth: true
                         text: "Reboot"
-                        font.pixelSize: 13
+                        font.pixelSize: root.scaled(13)
                         enabled: sddm.canReboot
                         onClicked: sddm.reboot()
 
@@ -340,10 +348,10 @@ Rectangle {
                         }
 
                         background: Rectangle {
-                            radius: 10
+                            radius: root.scaled(10)
                             color: rebootButton.down ? "#263840" : rebootButton.hovered ? "#1e2b31" : "#162027"
                             border.color: rebootButton.enabled ? "#2d3a42" : "#1e262b"
-                            border.width: 1
+                            border.width: root.scaled(1)
                             opacity: rebootButton.enabled ? 1 : 0.45
                         }
                     }
@@ -353,7 +361,7 @@ Rectangle {
 
                         Layout.fillWidth: true
                         text: "Power off"
-                        font.pixelSize: 13
+                        font.pixelSize: root.scaled(13)
                         enabled: sddm.canPowerOff
                         onClicked: sddm.powerOff()
 
@@ -367,10 +375,10 @@ Rectangle {
                         }
 
                         background: Rectangle {
-                            radius: 10
+                            radius: root.scaled(10)
                             color: powerButton.down ? "#263840" : powerButton.hovered ? "#1e2b31" : "#162027"
                             border.color: powerButton.enabled ? "#2d3a42" : "#1e262b"
-                            border.width: 1
+                            border.width: root.scaled(1)
                             opacity: powerButton.enabled ? 1 : 0.45
                         }
                     }
@@ -382,11 +390,11 @@ Rectangle {
     Text {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.margins: 28
+        anchors.margins: root.scaled(28)
         text: Qt.formatDateTime(new Date(), "HH:mm")
         color: root.textColor
         opacity: 0.88
-        font.pixelSize: 42
+        font.pixelSize: root.scaled(42)
         font.weight: Font.Light
     }
 

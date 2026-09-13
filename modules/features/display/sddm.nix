@@ -1,8 +1,9 @@
 { ... }:
 {
-  flake.nixosModules.sddmDisplay = { pkgs, ... }:
+  flake.nixosModules.sddmDisplay = { config, pkgs, ... }:
     let
       themeName = "t480-noctalia";
+      visual = config.t480.visualAccessibility;
       sddmTheme = pkgs.stdenvNoCC.mkDerivation {
         pname = "${themeName}-sddm-theme";
         version = "1.0.0";
@@ -16,6 +17,8 @@
 
           mkdir -p "$out/share/sddm/themes/${themeName}"
           cp -r . "$out/share/sddm/themes/${themeName}/"
+          substituteInPlace "$out/share/sddm/themes/${themeName}/theme.conf" \
+            --replace-fail "@loginScale@" "${toString visual.loginScale}"
 
           runHook postInstall
         '';

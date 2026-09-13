@@ -31,6 +31,12 @@
         ];
 
         xdg.enable = true;
+
+        dconf.settings."org/gnome/desktop/interface" = {
+          text-scaling-factor = visual.gtkTextScale;
+          cursor-size = visual.cursorSize;
+        };
+
         xdg.configFile."niri/config.kdl".text = ''
           input {
               keyboard {
