@@ -134,7 +134,7 @@ Also verify:
 
 - This repo assumes the T480 is booting with Libreboot's GRUB payload.
 - NixOS does not install a separate bootloader to the disk; `boot.loader.grub.device = "nodev"` only generates the config and kernel files Libreboot needs.
-- Do not add `boot.loader.grub.target = "i386-coreboot"` to this flake. That is not a NixOS 25.11 option and would break evaluation.
+- Do not add `boot.loader.grub.target = "i386-coreboot"` to this flake. That is not a current NixOS option and would break evaluation.
 - The Disko layout uses a normal 1 GiB Linux `/boot` partition. Because `/boot` is mounted separately, Libreboot sees NixOS's `/boot/grub/grub.cfg` as `/grub/grub.cfg` on that partition.
 
 ## T480 Key Notes
