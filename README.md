@@ -154,6 +154,7 @@ Also verify:
 ## Noctalia Notes
 
 - The repo uses Noctalia v5's native binary and Home Manager module, not the legacy Quickshell shell.
+- Noctalia follows the shared visual profile: its panels use 125% UI scale and high contrast, while the top bar uses 125% control scale with 120% text scale.
 - The flake now includes Noctalia's Cachix binary cache to avoid expensive local builds.
 - The active Niri shell path is `Niri + Noctalia`, not `Niri + Waybar + Mako`.
 - I did not find official stock Noctalia configuration for separate `BAT0` and `BAT1` widgets comparable to Waybar's multi-instance battery module. For now, treat the built-in Noctalia battery integration as the primary shell UI and the Waybar config as the fallback reference for explicit dual-battery display.

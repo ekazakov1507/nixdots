@@ -1,10 +1,11 @@
 { inputs, ... }:
 {
-  flake.nixosModules.noctaliaShell = { pkgs, ... }:
+  flake.nixosModules.noctaliaShell = { config, pkgs, ... }:
     let
       # Keep this in sync with modules/features/user.nix until user settings are centralized.
       username = "user";
       noctaliaPackage = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      visual = config.t480.visualAccessibility;
     in
     {
       xdg.portal = {
@@ -35,12 +36,19 @@
               settings_show_advanced = true;
             };
 
+            accessibility = {
+              ui_scale = visual.shellUiScale;
+              high_contrast = visual.highContrast;
+            };
+
             bar = {
               order = [ "default" ];
 
               default = {
                 position = "top";
                 capsule = false;
+                scale = visual.barScale;
+                font_scale = visual.barFontScale;
                 start = [ "launcher" "active-window" ];
                 center = [ "workspaces" ];
                 end = [
