@@ -29,11 +29,13 @@
           enable = true;
           package = noctaliaPackage;
           systemd.enable = false;
+          checkConfig = true;
 
           settings = {
             shell = {
               font_family = "sans-serif";
               settings_show_advanced = true;
+              polkit_agent = true;
             };
 
             accessibility = {
@@ -54,12 +56,45 @@
                 end = [
                   "tray"
                   "notifications"
-                  "battery"
+                  "battery_label_internal"
+                  "battery_internal"
+                  "battery_label_external"
+                  "battery_external"
+                  "power_profile"
                   "volume"
                   "brightness"
                   "control-center"
                   "clock"
                 ];
+              };
+            };
+
+            widget = {
+              battery_label_internal = {
+                type = "text";
+                text = "BAT0";
+              };
+              battery_internal = {
+                type = "battery";
+                device = "BAT0";
+                display_mode = "glyph";
+                show_label = true;
+                label_content = "percent";
+                hide_when_plugged = false;
+                hide_when_full = false;
+              };
+              battery_label_external = {
+                type = "text";
+                text = "BAT1";
+              };
+              battery_external = {
+                type = "battery";
+                device = "BAT1";
+                display_mode = "glyph";
+                show_label = true;
+                label_content = "percent";
+                hide_when_plugged = false;
+                hide_when_full = false;
               };
             };
           };

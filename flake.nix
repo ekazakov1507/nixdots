@@ -10,7 +10,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
@@ -28,8 +27,8 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     noctalia = {
-      url = "github:noctalia-dev/noctalia";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      url = "github:noctalia-dev/noctalia/v5.4.1";
+      # Keep upstream's nixpkgs input so its binary-cache builds can be reused.
     };
   };
 

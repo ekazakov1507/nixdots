@@ -84,7 +84,7 @@
           }
 
           layer-rule {
-              match namespace="^noctalia-wallpaper*"
+              match namespace="^noctalia-wallpaper"
               place-within-backdrop true
           }
 
@@ -92,7 +92,7 @@
               honor-xdg-activation-with-invalid-serial
           }
 
-          spawn-at-startup "noctalia"
+          spawn-at-startup "uwsm" "app" "--" "noctalia"
 
           prefer-no-csd
           screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
@@ -186,7 +186,7 @@
               Ctrl+Print { screenshot-screen; }
               Alt+Print { screenshot-window; }
 
-              Mod+Shift+E { quit; }
+              Mod+Shift+E repeat=false { spawn "noctalia" "msg" "session" "logout"; }
           }
         '';
 

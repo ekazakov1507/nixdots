@@ -33,20 +33,87 @@ validate_username() {
 validate_disk() {
   local disk=$1
 
+  validate_disk_path "$disk"
+
   if [[ ! -b "$disk" ]]; then
     echo "Disk path is not a block device: $disk" >&2
     exit 1
   fi
 
-  case "$disk" in
-    /dev/disk/by-id/*|/dev/nvme*n1|/dev/sd[a-z]|/dev/vd[a-z])
-      ;;
-    *)
-      echo "Refusing suspicious disk path: $disk" >&2
-      echo "Use a whole-disk path like /dev/nvme0n1 or /dev/disk/by-id/<disk>." >&2
+  validate_disk_metadata "$disk"
+}
+
+validate_disk_path() {
+  local disk=$1
+
+  if [[ ! "$disk" =~ ^/dev/(disk/by-id/[a-zA-Z0-9._:+-]+|nvme[0-9]+n[0-9]+|sd[a-z]+|vd[a-z]+|mmcblk[0-9]+)$ ]] ||
+    [[ "$disk" == *-part[0-9]* ]]; then
+    echo "Refusing suspicious disk path: $disk" >&2
+    echo "Use a whole-disk path like /dev/nvme0n1 or /dev/disk/by-id/<disk>." >&2
+    exit 1
+  fi
+}
+
+validate_disk_metadata() {
+  local disk=$1
+
+  if [[ "$(lsblk --nodeps --noheadings --raw --output TYPE "$disk")" != "disk" ]]; then
+    echo "Refusing a device that is not a whole disk: $disk" >&2
+    exit 1
+  fi
+
+  if [[ "$(lsblk --nodeps --noheadings --raw --output RO "$disk")" != "0" ]]; then
+    echo "Refusing a read-only disk: $disk" >&2
+    exit 1
+  fi
+}
+
+require_unused_disk() {
+  local disk=$1
+  local mountpoints
+  local targets
+  local target
+
+  # Includes descendants and [SWAP], protecting the live USB and mounted systems.
+  if ! mountpoints=$(lsblk --noheadings --raw --output MOUNTPOINTS "$disk"); then
+    echo "Could not inspect disk mounts; refusing to continue." >&2
+    exit 1
+  fi
+  if [[ -n "${mountpoints//[[:space:]]/}" ]]; then
+    echo "Refusing a disk with mounted filesystems or active swap: $disk" >&2
+    exit 1
+  fi
+
+  if ! targets=$(findmnt --noheadings --raw --output TARGET); then
+    echo "Could not inspect existing mounts; refusing to continue." >&2
+    exit 1
+  fi
+  while IFS= read -r target; do
+    if [[ "$target" == "/mnt" || "$target" == /mnt/* ]]; then
+      echo "Refusing to install while $target is already mounted." >&2
       exit 1
-      ;;
-  esac
+    fi
+  done <<<"$targets"
+}
+
+confirm_disk() {
+  local disk=$1
+  local confirmation
+
+  lsblk --output NAME,SIZE,MODEL,SERIAL,TYPE,MOUNTPOINTS "$disk"
+  echo "WARNING: This will erase ALL partitions and data on $disk."
+  printf 'Type exactly "ERASE %s" to continue: ' "$disk"
+  if ! IFS= read -r confirmation || [[ "$confirmation" != "ERASE $disk" ]]; then
+    echo "Disk erasure not confirmed; nothing was formatted." >&2
+    exit 1
+  fi
+}
+
+run_disko() {
+  local repo_root=$1
+
+  nix --extra-experimental-features "nix-command flakes" run "$repo_root#disko" -- \
+    --mode destroy,format,mount --flake "$repo_root#t480"
 }
 
 resolve_stable_disk() {
@@ -117,7 +184,15 @@ main() {
 
   require_root
   validate_username "$user_name"
+  local command_name
+  for command_name in nix nixos-install nixos-generate-config nixos-enter lsblk readlink findmnt mountpoint; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+      echo "Missing required live-ISO command: $command_name" >&2
+      exit 1
+    fi
+  done
   validate_disk "$disk_arg"
+  require_unused_disk "$disk_arg"
 
   repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
   host_dir="$repo_root/modules/hosts/t480"
@@ -127,21 +202,35 @@ main() {
     exit 1
   fi
 
+  if [[ "$repo_root" == "/mnt" || "$repo_root" == /mnt/* ]]; then
+    echo "Clone the repo into the live environment, not under /mnt." >&2
+    exit 1
+  fi
+
+  confirm_disk "$disk_arg"
   stable_disk=$(resolve_stable_disk "$disk_arg")
+  validate_disk "$stable_disk"
   write_disk_file "$host_dir/_disk-device.nix" "$stable_disk"
 
   echo "Using install disk: $stable_disk"
   echo "Rewrote $host_dir/_disk-device.nix"
 
-  nix --extra-experimental-features "nix-command flakes" run "$repo_root#disko" -- \
-    --mode destroy,format,mount "$host_dir/disko.nix"
+  # Resolve inputs and catch configuration/account errors before erasing anything.
+  nix --extra-experimental-features "nix-command flakes" flake lock "$repo_root"
+  nix --extra-experimental-features "nix-command flakes" eval --raw \
+    "$repo_root#nixosConfigurations.t480.config.home-manager.users.${user_name}.home.username" >/dev/null
+  nix --extra-experimental-features "nix-command flakes" eval --raw \
+    "$repo_root#nixosConfigurations.t480.config.system.build.toplevel.drvPath" >/dev/null
+
+  require_unused_disk "$disk_arg"
+  run_disko "$repo_root"
 
   if ! mountpoint -q /mnt; then
     echo "Expected disko to mount the target filesystem at /mnt." >&2
     exit 1
   fi
 
-  nixos-generate-config --root /mnt
+  nixos-generate-config --no-filesystems --root /mnt
   install -m 0644 /mnt/etc/nixos/hardware-configuration.nix \
     "$host_dir/_hardware-configuration.nix"
 
@@ -160,8 +249,10 @@ After first boot, commit these generated files from /home/${user_name}/nixdots:
   modules/hosts/t480/_disk-device.nix
   modules/hosts/t480/_hardware-configuration.nix
 
-If flake.lock was created during installation, commit that too.
+Also commit flake.lock, which records the exact dependency revisions used.
 EOF
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

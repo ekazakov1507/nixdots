@@ -38,11 +38,11 @@ If you change the username, update `modules/features/user.nix`, `modules/feature
 
 The desktop module enables `programs.niri` with UWSM. It keeps a small Niri-oriented package set around the shell, including `alacritty`, `fuzzel`, `brightnessctl`, `playerctl`, `pavucontrol`, and `xwayland-satellite`.
 
-The display module enables SDDM on Wayland, uses the UWSM-managed `niri-uwsm` session by default, and packages the local `t480-noctalia` Qt6 theme into the system profile.
+The display module enables SDDM on Wayland, uses the UWSM-managed `niri-uwsm` session by default, and packages the local `t480-noctalia` Qt6 theme into the system profile. Niri runs with `--session` so its display and IPC environment is imported before graphical services start.
 
 The boot module disables systemd-boot and EFI variable writes. It enables GRUB with `device = "nodev"` so NixOS generates `/boot/grub/grub.cfg` and copied kernels for Libreboot's GRUB payload to load.
 
-The laptop module enables `thermald`, `tlp`, `upower`, and `zramSwap`. `power-profiles-daemon` is intentionally not enabled because it conflicts with TLP.
+The laptop module enables `thermald`, `tlp`, `tlp-pd`, `upower`, and `zramSwap`. TLP's own profiles daemon provides desktop power-mode controls; the separate `power-profiles-daemon` stays disabled because it conflicts with TLP.
 
 The base module enables PipeWire with PulseAudio compatibility and `rtkit`, so Noctalia audio controls, `playerctl`, and `pavucontrol` all have an actual audio backend.
 
@@ -51,8 +51,11 @@ The Noctalia module adds:
 - the Noctalia flake package and Home Manager module
 - `cliphist`, `imagemagick`, `python3`, and `wlsunset`
 - `xdg-desktop-portal` with the GTK file chooser portal for Niri
+- Noctalia's authentication agent for graphical administrator prompts
+- separate, labeled `BAT0` and `BAT1` battery widgets, including while charging
+- a power-profile widget backed by `tlp-pd`
 
-Noctalia is the primary shell layer now. Niri starts `noctalia` directly at session startup, and the main launcher, control center, settings, lock screen, volume, brightness, and media keybinds all go through `noctalia msg`.
+Noctalia is the primary shell layer. Niri starts it through `uwsm app -- noctalia` at session startup, and the main launcher, control center, settings, lock screen, volume, brightness, media, and logout keybinds all go through `noctalia msg`.
 
 The user module also writes an explicit `niri/config.kdl` so the T480 does not rely on upstream defaults for:
 
@@ -71,7 +74,7 @@ Waybar is explicitly configured under `~/.config/waybar` to show:
 
 This assumes the T480 exposes its two batteries as `BAT0` and `BAT1`, which is the normal Linux layout for this class of ThinkPad. Confirm it after first boot with `ls /sys/class/power_supply`.
 
-The Waybar files are now only a fallback reference. The active shell is Noctalia.
+The Waybar files are only an optional fallback. Noctalia itself now displays both battery widgets; Waybar does not need to run. A battery widget hides if UPower reports that battery as absent, for example when the removable battery is disconnected. The fixed BAT0/BAT1 text labels remain visible.
 
 The editor module installs a LazyVim-based Neovim setup. It enables Home Manager `programs.neovim`, writes the LazyVim bootstrap under `~/.config/nvim`, and installs the tools LazyVim expects on Linux, including `fd`, `fzf`, `lazygit`, `ripgrep`, `tree-sitter`, and a C compiler.
 
@@ -80,7 +83,7 @@ For Nix development, the LazyVim config also enables the official Nix extra and 
 ## Authoring Flow
 
 1. Initialize the repo locally and add your GitHub remote.
-2. If you already have a working Nix installation on another machine, run `nix flake lock` and commit `flake.lock`.
+2. On a Linux Nix machine, run the validation commands below and commit `flake.lock`. Without that file, input branches are not reproducibly locked.
 3. Push the repo to GitHub.
 
 Full install documentation is in `docs/T480_INSTALL.md`.
@@ -98,11 +101,11 @@ bash scripts/live-install-t480.sh /dev/nvme0n1
 
 The installer script will:
 
-1. Validate the disk path.
+1. Validate the whole disk and reject read-only disks, partitions, mounted filesystems, and active swap.
 2. Resolve a stable `/dev/disk/by-id/...` path when possible.
 3. Rewrite `modules/hosts/t480/_disk-device.nix`.
-4. Partition, format, and mount the disk with the repo's pinned `disko` input.
-5. Generate hardware config and rewrite `modules/hosts/t480/_hardware-configuration.nix`.
+4. Require an explicit `ERASE <disk>` confirmation, resolve the lock file, and evaluate the host before running Disko with `--flake .#t480`.
+5. Partition, format, and mount the disk, then generate hardware config with `--no-filesystems` so Disko remains the filesystem authority.
 6. Run `nixos-install --flake .#t480`.
 7. Copy the finalized repo into `/home/user/nixdots` on the installed system.
 8. Prompt for the default user password after install.
@@ -117,17 +120,42 @@ The installer copies the finalized repo to `/home/user/nixdots`. Review and comm
 
 - `modules/hosts/t480/_disk-device.nix`
 - `modules/hosts/t480/_hardware-configuration.nix`
-- `flake.lock` if it was created during installation
+- `flake.lock`
 
 Also verify:
 
 - `sudo tlp-stat -s`
 - `sudo tlp-stat -b`
 - `ls /sys/class/power_supply`
+- `upower -e`, then inspect both battery devices with `upower -i <device-path>`
 - `noctalia msg status`
 - `ls /run/current-system/sw/share/sddm/themes`
 - `test -f /boot/grub/grub.cfg`
 - `ls /boot/kernels`
+
+Check the Noctalia bar visually: BAT0 and BAT1 should each have their own percentage and charging indicator. Compare both values against UPower with the charger connected and disconnected. Do not assume equal percentages: the T480 can charge and discharge its batteries sequentially.
+
+## Validation
+
+On Linux with Nix, from the committed or staged repository:
+
+```bash
+nix flake lock
+nix flake check --no-build
+nix flake check
+nix build .#nixosConfigurations.t480.config.system.build.toplevel --no-link
+```
+
+The checks validate the Niri configuration with Niri itself, validate the Noctalia TOML using its Home Manager module, lint and test the installer, and build the system. They do not format any disks. A full check downloads or builds the complete system and can take a while.
+
+The installer tests can also run without Nix, including in Git Bash on Windows:
+
+```bash
+bash -n scripts/live-install-t480.sh
+bash tests/installer.sh
+```
+
+Keep `system.stateVersion` and `home.stateVersion` at the values used for the first installation. These are compatibility settings, not package-update controls; do not raise them just to upgrade inputs.
 
 ## Libreboot Notes
 
@@ -147,17 +175,18 @@ Also verify:
 ## Power Notes
 
 - The T480 is a good TLP target. The repo now uses TLP rather than `power-profiles-daemon`.
-- The included TLP settings are conservative CPU power settings only; they do not yet enforce charge thresholds.
+- TLP keeps the existing AC and battery CPU policy, with an additional power-saver profile. No charge thresholds are imposed.
+- Swap is compressed RAM only. Suspend-to-RAM is supported by the normal laptop stack; hibernation is not configured.
 - If you later want battery health thresholds, the T480 class supports separate ThinkPad charge controls for `BAT0` and `BAT1`, but those should be chosen deliberately rather than silently enabled.
-- Noctalia's documented power-profile integration expects `power-profiles-daemon` or `tuned`. Because this repo keeps TLP for the T480, you should expect Noctalia's power-profile controls to be unavailable unless we later switch away from TLP.
+- `services.tlp.pd.enable` exposes the PowerProfiles D-Bus interface used by Noctalia. The GUI can select TLP performance, balanced, or power-saver profiles without running a competing power manager.
 
 ## Noctalia Notes
 
-- The repo uses Noctalia v5's native binary and Home Manager module, not the legacy Quickshell shell.
+- The repo uses Noctalia v5.4.1's native binary and Home Manager module, not the legacy Quickshell shell.
 - Noctalia follows the shared visual profile: its panels use 125% UI scale and high contrast, while the top bar uses 125% control scale with 120% text scale.
-- The flake now includes Noctalia's Cachix binary cache to avoid expensive local builds.
+- The flake includes Noctalia's Cachix binary cache and retains upstream's own nixpkgs input to preserve cache compatibility. Whether a particular build is cached still depends on the locked inputs and cache availability.
 - The active Niri shell path is `Niri + Noctalia`, not `Niri + Waybar + Mako`.
-- I did not find official stock Noctalia configuration for separate `BAT0` and `BAT1` widgets comparable to Waybar's multi-instance battery module. For now, treat the built-in Noctalia battery integration as the primary shell UI and the Waybar config as the fallback reference for explicit dual-battery display.
+- Stock Noctalia supports named battery widgets with a `device` selector. This repo uses `BAT0` and `BAT1` directly, following the [official battery widget reference](https://docs.noctalia.dev/noctalia/bar/widgets/battery/).
 
 ## SDDM Notes
 

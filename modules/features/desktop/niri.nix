@@ -13,6 +13,8 @@
         comment = "Niri compositor managed by UWSM";
         # Match the compositor path that UWSM itself recommends.
         binPath = "/run/current-system/sw/bin/niri";
+        # Import Wayland/Niri variables before UWSM starts graphical services.
+        extraArgs = [ "--session" ];
       };
     };
 

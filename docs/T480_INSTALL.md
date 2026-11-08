@@ -14,7 +14,8 @@ It is a full-disk install. The selected internal disk will be erased.
 - Desktop: Niri through UWSM
 - Shell: Noctalia
 - Login screen: SDDM with the local `t480-noctalia` theme
-- Power: TLP, thermald, upower, and zram swap
+- Power: TLP with its profiles daemon, thermald, upower, and zram swap
+- Battery UI: separate BAT0 and BAT1 percentage/charging widgets in Noctalia
 - Editor: Neovim with LazyVim bootstrap
 
 ## Before You Start
@@ -97,6 +98,8 @@ Do not copy the ISO file onto the USB stick as a normal file. The image must be 
 This guide assumes Libreboot's GRUB payload. It does not rely on Lenovo UEFI setup, Secure Boot settings, EFI boot entries, or systemd-boot.
 
 If your Libreboot ROM uses SeaBIOS instead of the GRUB payload, this flake's boot settings are not enough by themselves because `boot.loader.grub.device = "nodev"` does not install an MBR bootloader.
+
+Newer Libreboot releases can also use EDK2/UEFI. This repository deliberately targets your confirmed Libreboot GRUB menu, not every Libreboot payload. Do not use its partition layout unchanged on an EDK2-only installation.
 
 ## 5. Boot the NixOS Live Environment
 
@@ -212,17 +215,18 @@ bash scripts/live-install-t480.sh /dev/sda
 Expected prompts:
 
 - Nix may ask whether to accept flake configuration for the Noctalia binary cache. Answer yes.
+- Before any formatting, the script shows the disk and requires you to type `ERASE <disk>` exactly, for example `ERASE /dev/nvme0n1`. Check the model, serial, and size against your intended internal disk first.
 - Disk encryption will ask for a LUKS passphrase. Save this password.
 - `nixos-install` will ask for a root password.
 - The script will ask for the default `user` account password.
 
 The script does these steps:
 
-1. Validates the disk path.
+1. Validates the disk path and whole-disk type; refuses read-only disks, mounted filesystems, active swap, and an already-mounted `/mnt` tree.
 2. Resolves a stable `/dev/disk/by-id/...` path when possible.
 3. Rewrites `modules/hosts/t480/_disk-device.nix`.
-4. Runs Disko to partition, format, encrypt, and mount the disk at `/mnt`.
-5. Runs `nixos-generate-config --root /mnt`.
+4. Requires erasure confirmation, resolves `flake.lock`, evaluates the host, then runs Disko with `--flake .#t480` to partition, format, encrypt, and mount the disk at `/mnt`.
+5. Runs `nixos-generate-config --no-filesystems --root /mnt`, keeping filesystem and encryption declarations in Disko.
 6. Copies generated hardware config into `modules/hosts/t480/_hardware-configuration.nix`.
 7. Runs `nixos-install --root /mnt --flake .#t480`.
 8. Copies the finalized repo into `/home/user/nixdots` on the installed system.
@@ -292,7 +296,20 @@ Check TLP:
 ```bash
 sudo tlp-stat -s
 sudo tlp-stat -b
+systemctl status tlp-pd --no-pager
 ```
+
+Check both Noctalia battery widgets while plugged in and on battery power. Each should show its own percentage and charging state next to the BAT0 or BAT1 label. If a battery is physically absent, its widget hides; the fixed label remains.
+
+Compare the GUI values with UPower:
+
+```bash
+upower -e
+upower -i /org/freedesktop/UPower/devices/battery_BAT0
+upower -i /org/freedesktop/UPower/devices/battery_BAT1
+```
+
+Use the actual paths printed by `upower -e` if they differ. The two batteries do not necessarily charge or discharge at the same time. Check the Noctalia power-profile widget too; it is backed by TLP's profiles daemon, not the conflicting `power-profiles-daemon`.
 
 Check SDDM theme installation:
 
@@ -367,9 +384,27 @@ sudo nixos-rebuild switch --flake .#t480
 
 If a switch breaks the desktop, reboot and choose an older generation in the boot menu.
 
+Do not run `live-install-t480.sh` to update an installed system: it is a destructive installer. Use `nixos-rebuild` instead. Keep `system.stateVersion` and `home.stateVersion` at their original first-install values when updating packages.
+
+## Validate Before Installation or Updates
+
+On a Linux machine with Nix, run these commands before using the destructive installer:
+
+```bash
+cd nixdots
+nix flake lock
+nix flake check --no-build
+nix flake check
+nix build .#nixosConfigurations.t480.config.system.build.toplevel --no-link
+```
+
+Commit `flake.lock` before pushing the validated configuration. The check builds the system and validates Niri, Noctalia, and installer tests, but does not run Disko or touch disk partitions. Until it succeeds, treat the configuration as unverified for installation.
+
 ## Troubleshooting
 
 If the installer refuses the disk path, you probably selected a partition. Use a whole disk like `/dev/nvme0n1`, not `/dev/nvme0n1p1`.
+
+The installer also refuses disks that are mounted or used as swap, and any existing mount under `/mnt`. If an install fails after Disko has mounted the target, inspect the failure and mounts before retrying; do not rerun the destructive installer blindly.
 
 If networking fails, run `nmtui` again or use Ethernet. The install needs network access for the flake inputs and packages.
 
@@ -386,7 +421,19 @@ If Niri starts but the shell does not appear, run:
 noctalia
 ```
 
-If Noctalia power profile controls are missing, that is expected with this repo. The T480 power stack uses TLP instead of `power-profiles-daemon`.
+If Noctalia power-profile controls are missing, check `systemctl status tlp-pd --no-pager` and `journalctl -b -u tlp-pd --no-pager`. Do not enable `power-profiles-daemon` alongside TLP to fix it.
+
+If a battery widget is missing, inspect `upower -e` and `ls /sys/class/power_supply`. The shell cannot display a battery the firmware/kernel/UPower does not expose. Check the widget's `device` selector if the actual battery names differ from BAT0 and BAT1.
+
+Noctalia's GUI-managed `~/.config/noctalia/settings.toml` can override the Home Manager defaults. If an older bar layout remains after rebuilding, inspect the effective settings before changing anything:
+
+```bash
+noctalia msg config-get bar.default.end
+noctalia msg config-get widget.battery_internal.device
+noctalia msg config-get widget.battery_external.device
+```
+
+The widget selectors should be BAT0 and BAT1. Review any overlapping bar/widget settings in the GUI override file; preserve unrelated preferences.
 
 If Libreboot does not find NixOS after installation, use the Libreboot GRUB menu to search for GRUB configuration files. The expected config is `/grub/grub.cfg` on the separate `/boot` partition, which appears as `/boot/grub/grub.cfg` after Linux is booted.
 

@@ -14,7 +14,7 @@
           lazygit
           lua-language-server
           nil
-          nixfmt-rfc-style
+          nixfmt
           nodejs
           ripgrep
           shfmt
