@@ -87,6 +87,11 @@
               }
           }
 
+          hotkey-overlay {
+              skip-at-startup
+              hide-not-bound
+          }
+
           window-rule {
               geometry-corner-radius 20
               clip-to-geometry true
@@ -113,17 +118,17 @@
           binds {
               Mod+Shift+Slash { show-hotkey-overlay; }
 
-              Mod+T { spawn "alacritty"; }
+              Mod+T hotkey-overlay-title="Open terminal" { spawn "alacritty"; }
               Mod+Ctrl+Minus { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "1"; }
               Mod+Ctrl+0 { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "${toString visual.outputScale}"; }
               Mod+Ctrl+Equal { spawn "niri" "msg" "output" "${visual.outputName}" "scale" "1.5"; }
-              Mod+Space { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
-              Mod+D { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
-              Mod+S { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
-              Mod+Comma { spawn "noctalia" "msg" "settings-toggle"; }
-              Mod+V { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
-              Mod+C { spawn "noctalia" "msg" "panel-toggle" "launcher" "/calc"; }
-              Super+Alt+L { spawn "noctalia" "msg" "session" "lock"; }
+              Mod+Space hotkey-overlay-title="Open launcher" { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+              Mod+D hotkey-overlay-title="Open launcher" { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+              Mod+S hotkey-overlay-title="Open control center" { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+              Mod+Comma hotkey-overlay-title="Open settings" { spawn "noctalia" "msg" "settings-toggle"; }
+              Mod+V hotkey-overlay-title="Open clipboard" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+              Mod+C hotkey-overlay-title="Open calculator" { spawn "noctalia" "msg" "panel-toggle" "launcher" "/calc"; }
+              Super+Alt+L hotkey-overlay-title="Lock screen" { spawn "noctalia" "msg" "session" "lock"; }
 
               XF86AudioRaiseVolume allow-when-locked=true {
                   spawn "noctalia" "msg" "volume-up";
