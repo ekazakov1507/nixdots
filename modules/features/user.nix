@@ -37,10 +37,19 @@
           cursor-size = visual.cursorSize;
         };
 
+        xdg.configFile."alacritty/alacritty.toml".text = ''
+          [font]
+          size = 16.0
+        '';
+
         xdg.configFile."niri/config.kdl".text = ''
           input {
               keyboard {
                   numlock
+                  xkb {
+                      layout "us,ru"
+                      options "grp:alt_shift_toggle,ctrl:swap_lctl_lcap"
+                  }
               }
 
               touchpad {
@@ -63,7 +72,7 @@
               center-focused-column "never"
               background-color "transparent"
 
-              default-column-width { proportion 0.5; }
+              default-column-width { proportion 1.0; }
 
               focus-ring {
                   width ${toString visual.focusRingWidth}
