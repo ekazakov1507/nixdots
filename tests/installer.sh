@@ -42,6 +42,7 @@ lsblk() {
     *" --output TYPE "*) printf '%s\n' "${disk_type:-disk}" ;;
     *" --output RO "*) printf '%s\n' "${read_only:-0}" ;;
     *" --output MOUNTPOINTS "*) printf '%s\n' "${disk_mounts:-}" ;;
+    *" --output PATH,TYPE "*) printf '%s\n' "${device_listing:-/dev/mock disk}" ;;
     *) printf 'mock disk information\n' ;;
   esac
 }
@@ -92,6 +93,30 @@ existing_mounts=/
 expect_failure "unconfirmed wipe" confirm_disk /dev/mock </dev/null
 expect_failure "wrong disk confirmation" confirm_disk /dev/mock <<<"ERASE /dev/other"
 expect_success "exact wipe confirmation" confirm_disk /dev/mock <<<"ERASE /dev/mock"
+
+check_signature_cleanup() {
+  local -a wiped=()
+  local device_listing=$'/dev/mock disk\n/dev/mock1 part\n/dev/mock2 part'
+  wipefs() { wiped+=("$*"); }
+  clear_old_signatures /dev/mock
+  [[ ${#wiped[@]} -eq 3 && ${wiped[0]} == '--all /dev/mock1' &&
+    ${wiped[1]} == '--all /dev/mock2' && ${wiped[2]} == '--all /dev/mock' ]]
+}
+
+reject_active_child() {
+  local device_listing=$'/dev/mock disk\n/dev/mock1 part\n/dev/mapper/cryptroot crypt'
+  wipefs() { echo 'unexpected wipe' >&2; return 1; }
+  clear_old_signatures /dev/mock
+}
+
+expect_success "old partition signatures cleared before disk signature" check_signature_cleanup
+expect_failure "active mapped child rejected before wiping" reject_active_child
+device_listing='/dev/mock1 part'
+expect_failure "missing disk in signature inspection" clear_old_signatures /dev/mock
+device_listing=
+disk_inspection_fails=true
+expect_failure "failed signature inspection" clear_old_signatures /dev/mock
+disk_inspection_fails=false
 
 check_disko_invocation() {
   local -a captured

@@ -225,7 +225,7 @@ The script does these steps:
 1. Validates the disk path and whole-disk type; refuses read-only disks, mounted filesystems, active swap, and an already-mounted `/mnt` tree.
 2. Resolves a stable `/dev/disk/by-id/...` path when possible.
 3. Rewrites `modules/hosts/t480/_disk-device.nix`.
-4. Requires erasure confirmation, resolves `flake.lock`, evaluates the host, then runs Disko with `--flake .#t480` to partition, format, encrypt, and mount the disk at `/mnt`.
+4. Requires erasure confirmation, resolves `flake.lock`, evaluates the host, clears old filesystem and partition signatures, then runs Disko with `--flake .#t480` to partition, format, encrypt, and mount the disk at `/mnt`. Signature cleanup destroys existing filesystem metadata on the selected disk and its partitions.
 5. Runs `nixos-generate-config --no-filesystems --root /mnt`, keeping filesystem and encryption declarations in Disko.
 6. Copies generated hardware config into `modules/hosts/t480/_hardware-configuration.nix`.
 7. Runs `nixos-install --root /mnt --flake .#t480`.

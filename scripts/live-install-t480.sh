@@ -116,6 +116,38 @@ run_disko() {
     --mode destroy,format,mount --flake "$repo_root#t480"
 }
 
+clear_old_signatures() {
+  local disk=$1
+  local devices path type disk_seen=0
+  local -a partitions=()
+
+  if ! devices=$(lsblk --list --paths --noheadings --raw --output PATH,TYPE "$disk"); then
+    echo "Could not inspect disk partitions; refusing to erase signatures." >&2
+    exit 1
+  fi
+  while read -r path type; do
+    [[ -z "$path" ]] && continue
+    case "$type" in
+      disk)
+        [[ "$(readlink -f "$path")" == "$(readlink -f "$disk")" && "$disk_seen" == 0 ]] || exit 1
+        disk_seen=1
+        ;;
+      part) partitions+=("$path") ;;
+      *) echo "Refusing an active or unsupported child device: $path ($type)" >&2; exit 1 ;;
+    esac
+  done <<<"$devices"
+  if [[ "$disk_seen" != 1 ]]; then
+    echo "Target disk missing from lsblk output; refusing to continue." >&2
+    exit 1
+  fi
+
+  # Disko can preserve an old filesystem signature even after repartitioning.
+  for path in "${partitions[@]}"; do
+    wipefs --all "$path"
+  done
+  wipefs --all "$disk"
+}
+
 resolve_stable_disk() {
   local disk=$1
   local resolved
@@ -185,7 +217,7 @@ main() {
   require_root
   validate_username "$user_name"
   local command_name
-  for command_name in nix nixos-install nixos-generate-config nixos-enter lsblk readlink findmnt mountpoint; do
+  for command_name in nix nixos-install nixos-generate-config nixos-enter lsblk readlink findmnt mountpoint wipefs; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
       echo "Missing required live-ISO command: $command_name" >&2
       exit 1
@@ -223,6 +255,13 @@ main() {
     "$repo_root#nixosConfigurations.t480.config.system.build.toplevel.drvPath" >/dev/null
 
   require_unused_disk "$disk_arg"
+  validate_disk "$stable_disk"
+  if [[ "$(readlink -f "$disk_arg")" != "$(readlink -f "$stable_disk")" ]]; then
+    echo "Disk identifier changed during preflight; refusing to continue." >&2
+    exit 1
+  fi
+  require_unused_disk "$stable_disk"
+  clear_old_signatures "$stable_disk"
   run_disko "$repo_root"
 
   if ! mountpoint -q /mnt; then
