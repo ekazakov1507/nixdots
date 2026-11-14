@@ -28,7 +28,23 @@
           cp ${home.xdg.configFile."noctalia/config.toml".source} "$out"
         '';
 
+        console-keymap = pkgs.runCommand "t480-console-keymap-check" { } ''
+          cp ${host.console.keyMap} "$out"
+        '';
+
+        sddm-theme = pkgs.runCommand "t480-sddm-theme-check" { } ''
+          test -f ${builtins.head host.services.displayManager.sddm.extraPackages}/share/sddm/themes/t480-noctalia/Main.qml
+          test -f ${builtins.head host.services.displayManager.sddm.extraPackages}/share/sddm/themes/t480-noctalia/theme.conf
+          touch "$out"
+        '';
+
         t480 = host.system.build.toplevel;
+        disk-layouts =
+          assert host.disko.devices.disk.main.content.partitions.root.content.type == "btrfs";
+          assert builtins.attrNames host.boot.initrd.luks.devices == [ ];
+          pkgs.runCommand "t480-disk-layout-check" { } ''
+            touch "$out"
+          '';
       };
     };
 }

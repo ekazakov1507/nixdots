@@ -15,7 +15,11 @@
     time.timeZone = "Europe/Moscow";
 
     i18n.defaultLocale = "en_US.UTF-8";
-    console.keyMap = "us";
+    services.xserver.xkb = {
+      layout = "us,ru";
+      options = "grp:alt_shift_toggle,ctrl:swap_lctl_lcap";
+    };
+    console.useXkbConfig = true;
 
     networking.firewall.enable = true;
     networking.networkmanager.enable = true;

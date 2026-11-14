@@ -33,25 +33,20 @@ in
             root = {
               size = "100%";
               content = {
-                type = "luks";
-                name = "cryptroot";
-                settings.allowDiscards = true;
-                content = {
-                  type = "btrfs";
-                  extraArgs = [ "-f" ];
-                  subvolumes = {
-                    "@" = {
-                      mountpoint = "/";
-                      mountOptions = commonMountOptions;
-                    };
-                    "@home" = {
-                      mountpoint = "/home";
-                      mountOptions = commonMountOptions;
-                    };
-                    "@nix" = {
-                      mountpoint = "/nix";
-                      mountOptions = commonMountOptions;
-                    };
+                type = "btrfs";
+                extraArgs = [ "-f" ];
+                subvolumes = {
+                  "@" = {
+                    mountpoint = "/";
+                    mountOptions = commonMountOptions;
+                  };
+                  "@home" = {
+                    mountpoint = "/home";
+                    mountOptions = commonMountOptions;
+                  };
+                  "@nix" = {
+                    mountpoint = "/nix";
+                    mountOptions = commonMountOptions;
                   };
                 };
               };

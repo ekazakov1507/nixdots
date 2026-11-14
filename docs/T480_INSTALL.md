@@ -9,7 +9,7 @@ It is a full-disk install. The selected internal disk will be erased.
 - Host: `t480`
 - User: `user`
 - Boot: Libreboot GRUB payload loading NixOS-generated GRUB config
-- Disk: GPT, 1 GiB unencrypted `/boot`, encrypted LUKS root
+- Disk: GPT, 1 GiB ext4 `/boot`, unencrypted Btrfs root
 - Filesystem: Btrfs subvolumes for `/`, `/home`, and `/nix`
 - Desktop: Niri through UWSM
 - Shell: Noctalia
@@ -17,6 +17,10 @@ It is a full-disk install. The selected internal disk will be erased.
 - Power: TLP with its profiles daemon, thermald, upower, and zram swap
 - Battery UI: separate BAT0 and BAT1 percentage/charging widgets in Noctalia
 - Editor: Neovim with LazyVim bootstrap
+
+The `main` branch installs an unencrypted `t480` system and has not yet been
+boot-tested on the T480. Do not use this branch to rebuild an existing encrypted
+installation. The previous encrypted configuration is on the `encrypted` branch.
 
 ## Before You Start
 
@@ -206,6 +210,10 @@ For the normal T480 NVMe case:
 bash scripts/live-install-t480.sh /dev/nvme0n1
 ```
 
+This destroys the selected disk and leaves personal files readable to anyone
+with physical access. A login password is not disk encryption. Verify an
+external backup and the disk identity before running the installer.
+
 For a SATA SSD:
 
 ```bash
@@ -216,7 +224,7 @@ Expected prompts:
 
 - Nix may ask whether to accept flake configuration for the Noctalia binary cache. Answer yes.
 - Before any formatting, the script shows the disk and requires you to type `ERASE <disk>` exactly, for example `ERASE /dev/nvme0n1`. Check the model, serial, and size against your intended internal disk first.
-- Disk encryption will ask for a LUKS passphrase. Save this password.
+- No disk-encryption passphrase is requested; this layout is unencrypted.
 - `nixos-install` will ask for a root password.
 - The script will ask for the default `user` account password.
 
@@ -225,10 +233,10 @@ The script does these steps:
 1. Validates the disk path and whole-disk type; refuses read-only disks, mounted filesystems, active swap, and an already-mounted `/mnt` tree.
 2. Resolves a stable `/dev/disk/by-id/...` path when possible.
 3. Rewrites `modules/hosts/t480/_disk-device.nix`.
-4. Requires erasure confirmation, resolves `flake.lock`, evaluates the host, clears old filesystem and partition signatures, then runs Disko with `--flake .#t480` to partition, format, encrypt, and mount the disk at `/mnt`. Signature cleanup destroys existing filesystem metadata on the selected disk and its partitions.
-5. Runs `nixos-generate-config --no-filesystems --root /mnt`, keeping filesystem and encryption declarations in Disko.
+4. Requires erasure confirmation, resolves `flake.lock`, evaluates the host, clears old filesystem and partition signatures, then runs Disko to partition, format, and mount the disk at `/mnt`. Signature cleanup destroys existing filesystem metadata on the selected disk and its partitions.
+5. Runs `nixos-generate-config --no-filesystems --root /mnt`, keeping filesystem declarations in Disko.
 6. Copies generated hardware config into `modules/hosts/t480/_hardware-configuration.nix`.
-7. Runs `nixos-install --root /mnt --flake .#t480`.
+7. Runs `nixos-install` with the selected host flake.
 8. Copies the finalized repo into `/home/user/nixdots` on the installed system.
 9. Sets the password for `user`.
 
@@ -261,7 +269,7 @@ On boot:
 
 1. Libreboot GRUB should find the NixOS GRUB config on `/boot`.
 2. Choose the NixOS entry if a menu is shown.
-3. Enter the LUKS disk encryption password when the NixOS initrd asks for it.
+3. The unencrypted system does not ask for a disk passphrase.
 4. Wait for SDDM.
 5. Log in as `user`.
 6. Use the password you set during install.
@@ -381,6 +389,10 @@ git pull
 sudo nixos-rebuild build --flake .#t480
 sudo nixos-rebuild switch --flake .#t480
 ```
+
+These commands are for a system installed from this unencrypted branch. Do not
+use them from this branch on an existing encrypted system: the configuration
+change does not convert the filesystem and can make the machine fail to boot.
 
 If a switch breaks the desktop, reboot and choose an older generation in the boot menu.
 

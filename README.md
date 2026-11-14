@@ -28,7 +28,7 @@ The files `modules/hosts/t480/_disk-device.nix` and `modules/hosts/t480/_hardwar
 
 - Hostname: `t480`
 - Boot: Libreboot GRUB payload loading NixOS-generated `/boot/grub/grub.cfg`
-- Filesystem: unencrypted `/boot`, encrypted Btrfs with `@`, `@home`, and `@nix` subvolumes
+- Filesystem: unencrypted `/boot` and Btrfs with `@`, `@home`, and `@nix` subvolumes
 - Desktop: Niri
 - Shell: Noctalia
 - Login manager: SDDM with the `t480-noctalia` theme
@@ -88,6 +88,11 @@ For Nix development, the LazyVim config also enables the official Nix extra and 
 
 Full install documentation is in `docs/T480_INSTALL.md`.
 
+The `main` branch is for an unencrypted installation. Do not rebuild an
+existing encrypted installation with this branch: changing configuration does
+not convert the disk and can prevent booting. The earlier encrypted setup is
+preserved on the `encrypted` branch. Back up and test before reinstalling.
+
 ## Live ISO Install
 
 From the NixOS live environment:
@@ -111,6 +116,26 @@ The installer script will:
 8. Prompt for the default user password after install.
 
 On first graphical login, SDDM should default to the Niri UWSM session. If it asks for a session, choose `Niri (UWSM)`.
+
+## Wallpapers And Shortcuts
+
+Set the desktop wallpaper through Noctalia's wallpaper controls. To set a
+separate SDDM wallpaper, add an image to this repository and set, for example,
+`t480.sddmWallpaper = ./login-wallpaper.png;` in the host configuration, with
+the path relative to that configuration file. Rebuild and log out to apply it.
+With no SDDM image configured, the theme uses its existing gradient. Noctalia's
+GUI wallpaper selection does not change the SDDM image.
+
+In Niri, `Super+Shift+F` toggles fullscreen, `Super+Shift+1` through
+`Super+Shift+9` move the focused window to a workspace, and `Super+Ctrl+1`
+through `Super+Ctrl+9` move its whole column. The help overlay remains
+available with `Super+Shift+/`.
+
+English and Russian layouts use `Alt+Shift` to switch, and left Ctrl and
+Caps Lock are swapped in Niri, SDDM's Weston session, and virtual consoles.
+Test the console mapping on the laptop before relying on it for recovery.
+On the Libreboot T480, Fn is handled by firmware; the requested Fn/right Ctrl
+swap has not been verified and is not configured.
 
 On first `nvim` launch, LazyVim will clone `lazy.nvim` and then install plugins into the user's home directory, so that first startup needs network access.
 

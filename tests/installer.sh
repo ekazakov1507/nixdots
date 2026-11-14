@@ -128,4 +128,5 @@ check_disko_invocation() {
 }
 
 expect_success "Disko selects the host flake, not a wrapper file" check_disko_invocation
+
 echo "$passed installer checks passed. No disks were touched."

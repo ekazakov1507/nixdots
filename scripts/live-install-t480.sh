@@ -216,6 +216,10 @@ main() {
 
   require_root
   validate_username "$user_name"
+  if [[ -n "${T480_HOST:-}" ]]; then
+    echo "T480_HOST is no longer supported; this branch installs unencrypted t480." >&2
+    exit 1
+  fi
   local command_name
   for command_name in nix nixos-install nixos-generate-config nixos-enter lsblk readlink findmnt mountpoint wipefs; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -239,6 +243,7 @@ main() {
     exit 1
   fi
 
+  echo "WARNING: This installation will NOT encrypt your files."
   confirm_disk "$disk_arg"
   stable_disk=$(resolve_stable_disk "$disk_arg")
   validate_disk "$stable_disk"
@@ -283,6 +288,8 @@ main() {
 
   cat <<EOF
 Install complete.
+
+For later rebuilds use: sudo nixos-rebuild switch --flake .#t480
 
 After first boot, commit these generated files from /home/${user_name}/nixdots:
   modules/hosts/t480/_disk-device.nix

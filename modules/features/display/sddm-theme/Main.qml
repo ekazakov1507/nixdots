@@ -37,6 +37,13 @@ Rectangle {
         }
     }
 
+    Image {
+        anchors.fill: parent
+        source: config.BackgroundImage ? "file://" + config.BackgroundImage : ""
+        fillMode: Image.PreserveAspectCrop
+        visible: source.toString() !== ""
+    }
+
     Rectangle {
         width: parent.width * 0.42
         height: parent.height * 1.3
