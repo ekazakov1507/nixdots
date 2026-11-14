@@ -3,6 +3,8 @@
 This guide installs this flake onto a Lenovo ThinkPad T480.
 
 It is a full-disk install. The selected internal disk will be erased.
+An unencrypted disk leaves your files readable to someone with physical access,
+even if your user account has a password.
 
 ## Result
 
@@ -31,28 +33,30 @@ You need:
 - A USB stick, 8 GB or larger.
 - A working internet connection during install.
 - A GitHub repo containing this `nixdots` repository.
-- A backup of anything important on the T480.
+- A verified external backup of anything important on the T480. Open some
+  backed-up files on another device, then disconnect the backup drive before
+  selecting the install disk.
 - A T480 already flashed with Libreboot using the GRUB payload path.
 
 Do not use this guide for dual boot. The Disko layout in this repo is designed for full-disk NixOS.
 
-## 1. Push This Repo From Windows
+## 1. Check the GitHub Repo
 
-From Windows PowerShell:
+The public installation source is
+`https://github.com/ekazakov1507/nixdots.git`, branch `main`. From Windows
+PowerShell, check that local changes have been committed and pushed:
 
 ```powershell
 cd C:\Users\user\nixdots
-git status
-git add .
-git commit -m "Add T480 NixOS flake"
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USER/nixdots.git
-git push -u origin main
+git status --short --branch
+git log -1 --oneline
+git ls-remote https://github.com/ekazakov1507/nixdots.git refs/heads/main
 ```
 
-If the remote already exists, skip `git remote add origin ...`.
-
-For the first install, the simplest path is a public GitHub repo. If the repo is private, prepare GitHub authentication for the live ISO before starting.
+Compare the local commit with the remote result. On 2026-11-14 the verified
+unencrypted `main` commit was `22ee8cb`. If the repository has changed since
+then, review the newer changes before installing rather than assuming they are
+the same configuration.
 
 ## 2. Download the NixOS ISO
 
@@ -74,19 +78,14 @@ The desktop you choose in the live ISO does not decide the installed desktop. Th
 
 Use a USB writing tool that writes the ISO image directly to the USB stick.
 
-Recommended simple option:
+If you still have the USB stick that successfully booted the NixOS GNOME live
+environment on this T480, you may reuse it. Otherwise, using Rufus:
 
-1. Install balenaEtcher.
+1. Open Rufus.
 2. Select the downloaded NixOS ISO.
 3. Select the USB stick.
-4. Flash the USB stick.
-
-Alternative option:
-
-1. Use Rufus.
-2. Select the downloaded NixOS ISO.
-3. Select the USB stick.
-4. If Rufus asks for ISO mode or DD mode, choose DD mode.
+4. Click **Start**. If Rufus asks for ISO mode or DD mode, choose **DD mode**.
+5. Wait for writing to finish. The USB stick will be erased.
 
 Do not copy the ISO file onto the USB stick as a normal file. The image must be written directly to the USB device.
 
@@ -95,19 +94,23 @@ Do not copy the ISO file onto the USB stick as a normal file. The image must be 
 1. Shut down the T480.
 2. Insert the USB stick.
 3. Turn on the laptop.
-4. At the Libreboot GRUB menu, choose the option that searches external media for a GRUB configuration.
-5. If that does not work, choose the ISOLINUX parser option if your Libreboot menu provides one.
-6. If automatic USB boot does not work, press `c` in Libreboot GRUB and boot the ISO manually from the GRUB shell.
+4. Open the Libreboot SeaBIOS boot menu and select the USB MSC drive, not the
+   internal NVMe drive.
+5. At the NixOS menu, select GNOME with Linux LTS. This USB boot path worked on
+   this T480 after the image was written in DD mode.
 
 This guide assumes Libreboot's GRUB payload. It does not rely on Lenovo UEFI setup, Secure Boot settings, EFI boot entries, or systemd-boot.
 
-If your Libreboot ROM uses SeaBIOS instead of the GRUB payload, this flake's boot settings are not enough by themselves because `boot.loader.grub.device = "nodev"` does not install an MBR bootloader.
+This machine's SeaBIOS menu also provides the `grub2` payload. After the
+install, use that payload for the installed NixOS system: `device = "nodev"`
+does not install an MBR bootloader for direct SeaBIOS disk boot.
 
 Newer Libreboot releases can also use EDK2/UEFI. This repository deliberately targets your confirmed Libreboot GRUB menu, not every Libreboot payload. Do not use its partition layout unchanged on an EDK2-only installation.
 
 ## 5. Boot the NixOS Live Environment
 
-When the NixOS boot menu appears, choose the default graphical option.
+When the GNOME live desktop loads, connect Wi-Fi using the top-right menu or
+connect Ethernet. Open a terminal; do not run the graphical installer.
 
 After the live desktop loads, open a terminal and become root:
 
@@ -115,11 +118,8 @@ After the live desktop loads, open a terminal and become root:
 sudo -i
 ```
 
-If you need a different keyboard layout, set it now. Example for US layout:
-
-```bash
-loadkeys us
-```
+If needed, adjust the live desktop's keyboard layout in its settings. The
+`loadkeys` command changes virtual consoles, not GNOME's graphical input.
 
 ## 6. Connect to the Internet
 
@@ -140,36 +140,50 @@ Then select your Wi-Fi network and enter the password.
 Check connectivity:
 
 ```bash
-ping -c 3 github.com
+curl -I https://cache.nixos.org/nix-cache-info
 ```
 
-If this fails, fix networking before continuing.
+If this fails, fix networking before continuing. If Wi-Fi is unusually slow,
+inspect the interface and temporarily disable Wi-Fi power saving, which helped
+on this machine during the earlier install:
+
+```bash
+iw dev
+```
+
+If the interface is named `wlp1s0`, run `iw dev wlp1s0 set power_save off`.
+Use the actual interface name from the output. This applies to the live session.
 
 ## 7. Clone the Flake Repo
 
-Replace the URL with your GitHub repo:
+Check whether Git is available:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USER/nixdots.git
-cd nixdots
+command -v git
 ```
 
-If `git` is missing in the live environment:
+If it prints nothing, run `nix-shell -p git` and wait for the shell to start.
+Then clone the public repo over HTTPS:
 
 ```bash
-nix-shell -p git --run "git clone https://github.com/YOUR_GITHUB_USER/nixdots.git"
+cd /root
+git clone --branch main https://github.com/ekazakov1507/nixdots.git
 cd nixdots
+git log -1 --oneline
 ```
+
+Check the commit against the reviewed remote revision from section 1. A public
+HTTPS clone does not require a GitHub token.
 
 ## 8. Identify the Install Disk
 
 List disks:
 
 ```bash
-lsblk -o NAME,SIZE,MODEL,TYPE,MOUNTPOINTS
+lsblk -o NAME,SIZE,MODEL,SERIAL,FSTYPE,TYPE,MOUNTPOINTS
 ```
 
-Typical T480 internal NVMe disk:
+Previous photos showed a roughly 476.9 GiB internal NVMe disk named:
 
 ```text
 /dev/nvme0n1
@@ -198,13 +212,16 @@ Wrong examples:
 /dev/sda1
 ```
 
-The USB installer will also appear in `lsblk`. Do not select the USB stick.
+Confirm its model, serial, size, and current name; do not rely on the old name
+alone. The USB installer will also appear in `lsblk`. Do not select the USB
+stick. If the target has mounted partitions, an open `cryptroot` mapping, or
+anything mounted under `/mnt`, stop and inspect the situation before proceeding.
 
 ## 9. Run the Installer
 
 This command erases the selected disk.
 
-For the normal T480 NVMe case:
+Only if `/dev/nvme0n1` is confirmed to be the intended internal disk:
 
 ```bash
 bash scripts/live-install-t480.sh /dev/nvme0n1
@@ -225,8 +242,12 @@ Expected prompts:
 - Nix may ask whether to accept flake configuration for the Noctalia binary cache. Answer yes.
 - Before any formatting, the script shows the disk and requires you to type `ERASE <disk>` exactly, for example `ERASE /dev/nvme0n1`. Check the model, serial, and size against your intended internal disk first.
 - No disk-encryption passphrase is requested; this layout is unencrypted.
-- `nixos-install` will ask for a root password.
+- `nixos-install` may ask for a root password.
 - The script will ask for the default `user` account password.
+
+Keep the charger connected and wait for the script itself to print
+`Install complete` after the user password prompt. If an error occurs, stop and
+record the message; do not blindly rerun the destructive installer.
 
 The script does these steps:
 
@@ -385,10 +406,14 @@ After future changes:
 
 ```bash
 cd ~/nixdots
-git pull
+git status --short
+git pull --ff-only origin main
 sudo nixos-rebuild build --flake .#t480
 sudo nixos-rebuild switch --flake .#t480
 ```
+
+Preserve the generated hardware and disk files. If Git reports a conflict,
+stop and resolve it rather than discarding those files.
 
 These commands are for a system installed from this unencrypted branch. Do not
 use them from this branch on an existing encrypted system: the configuration
